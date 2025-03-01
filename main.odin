@@ -4,14 +4,18 @@ import "core:fmt"
 import rl "vendor:raylib"
 
 main :: proc() {
-	rl.InitWindow(800, 600, "Raylib in Odin")
+    screen_width: i32 = 1600
+    screen_height: i32 = 900
+    radius: f32 = 10.0
+
+	rl.InitWindow(screen_width, screen_height, "Pong")
 
     rl.SetTargetFPS(60)
 
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.BLACK)
-		rl.DrawText("Hello, World!", 20, 20, 20, rl.WHITE)
+		rl.DrawCircleV(rl.Vector2{f32(screen_width/2), f32(screen_height/2)}, radius, rl.WHITE)
 		rl.EndDrawing()
 	}
 
