@@ -15,11 +15,12 @@ main :: proc() {
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.BLACK)
-		// rl.DrawCircleV(rl.Vector2{f32(screen_width/2), f32(screen_height/2)}, radius, rl.WHITE)
         ball := create_ball(screen_width, screen_height, radius)
         draw_ball(ball)
-        draw_paddle(screen_height, 100)
-        draw_paddle(screen_height, 1480)
+        paddle_left := create_paddle(screen_height, 100)
+        draw_paddle(paddle_left)
+        paddle_right := create_paddle(screen_height, 1480)
+        draw_paddle(paddle_right)
 		rl.EndDrawing()
 	}
 
