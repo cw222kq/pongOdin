@@ -8,9 +8,9 @@ Paddle :: struct {
     color: rl.Color,
 }
 
-create_paddle :: proc(screen_height: i32, posX: f32) -> Paddle {
+create_paddle :: proc(posX: f32) -> Paddle {
     return Paddle{
-        position = rl.Vector2{f32(posX), f32(screen_height)/2 - 200/2},
+        position = rl.Vector2{f32(posX), f32(rl.GetScreenHeight())/2 - 200/2},
         size = rl.Vector2{20, 200},
         color = rl.WHITE,
     }

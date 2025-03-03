@@ -11,9 +11,9 @@ main :: proc() {
 
     rl.SetTargetFPS(60)
 
-    ball := create_ball(screen_width, screen_height)
-    paddle_left := create_paddle(screen_height, 100)
-    paddle_right := create_paddle(screen_height, 1480)
+    ball := create_ball()
+    paddle_left := create_paddle(100)
+    paddle_right := create_paddle(1480)
     
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
