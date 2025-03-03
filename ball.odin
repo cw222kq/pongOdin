@@ -12,7 +12,7 @@ Ball :: struct {
 create_ball :: proc() -> Ball {
     return Ball{
         position = rl.Vector2{f32(rl.GetScreenWidth()/2), f32(rl.GetScreenHeight()/2)}, 
-        velocity = rl.Vector2{1, 3},
+        velocity = rl.Vector2{3, 0},
         radius = 10.0,
         color = rl.WHITE,
     }

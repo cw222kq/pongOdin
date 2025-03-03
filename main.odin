@@ -24,6 +24,9 @@ main :: proc() {
        
         draw_paddle(paddle_left)
         draw_paddle(paddle_right)
+
+        colliding_with_paddle(&ball, &paddle_left)
+        colliding_with_paddle(&ball, &paddle_right)
         
 		rl.EndDrawing()
 	}
