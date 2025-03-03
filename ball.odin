@@ -22,9 +22,16 @@ draw_ball :: proc(ball: Ball) {
     rl.DrawCircleV(ball.position, ball.radius, ball.color)
 }
 
-update_ball :: proc(ball: ^Ball) {
+colliding_with_wall :: proc(ball: ^Ball) -> bool {
+    min_y := ball.radius
+    max_y := f32(rl.GetScreenHeight()) - ball.radius
 
-    if (ball.position.y - ball.radius) < 0 || (ball.position.y + ball.radius) > f32(rl.GetScreenHeight()) {
+    return ball.position.y < min_y || ball.position.y > max_y
+}
+
+update_ball :: proc(ball: ^Ball) {
+   
+    if colliding_with_wall(ball) {
         ball.velocity.y = -ball.velocity.y
     }
 
