@@ -31,6 +31,9 @@ update_game :: proc(game: ^Game) {
 
     colliding_with_paddle(&game.ball, &game.paddle_left)
     colliding_with_paddle(&game.ball, &game.paddle_right)
+
+    update_paddle(&game.paddle_left, rl.KeyboardKey.W, rl.KeyboardKey.S)
+    update_paddle(&game.paddle_right, rl.KeyboardKey.UP, rl.KeyboardKey.DOWN)
 }
 
 draw_game :: proc(game: ^Game) {

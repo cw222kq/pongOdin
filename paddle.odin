@@ -17,6 +17,15 @@ create_paddle :: proc(posX: f32) -> Paddle {
 }
 
 draw_paddle :: proc(paddle: Paddle) {
-    //rl.DrawRectangleV(rl.Vector2{f32(200/2), f32((screen_height/2) - 200/2)}, rl.Vector2{f32(20), f32(200)}, rl.WHITE)
     rl.DrawRectangleV(paddle.position, paddle.size, paddle.color)
+}
+
+update_paddle :: proc(paddle: ^Paddle, up, down: rl.KeyboardKey) {
+    if rl.IsKeyDown(up) && paddle.position.y > 0 {
+        paddle.position.y -= 4
+    }
+
+    if rl.IsKeyDown(down) && paddle.position.y < f32(rl.GetScreenHeight()) - f32(paddle.size.y) {
+        paddle.position.y += 4
+    }
 }
