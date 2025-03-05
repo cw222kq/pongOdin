@@ -5,7 +5,14 @@ import "core:fmt"
 import "core:strings"
 import "core:math/rand"
 
+Game_state :: enum {
+    MENU,
+    PLAYING,
+    GAME_OVER,
+}
+
 Game :: struct {
+    state: Game_state,
     ball: Ball,
     paddle_left: Paddle,
     paddle_right: Paddle,
@@ -15,6 +22,7 @@ Game :: struct {
 
 new_game :: proc() -> Game {
     return Game{
+        state = .MENU,
         ball = create_ball(),
         paddle_left = create_paddle(100, rl.BLUE),
         paddle_right = create_paddle(1480, rl.YELLOW),
@@ -37,25 +45,40 @@ start_game :: proc() -> Game {
 }
 
 update_game :: proc(game: ^Game) {
-    update_ball(&game.ball)
+    # partial switch game.state {
+        case .MENU:
+            if rl.IsKeyPressed(.P) {
+                game.state = .PLAYING
+            }
+        case .PLAYING:
+            update_ball(&game.ball)
 
-    colliding_with_paddle(&game.ball, &game.paddle_left)
-    colliding_with_paddle(&game.ball, &game.paddle_right)
+            colliding_with_paddle(&game.ball, &game.paddle_left)
+            colliding_with_paddle(&game.ball, &game.paddle_right)
 
-    update_paddle(&game.paddle_left, rl.KeyboardKey.W, rl.KeyboardKey.S)
-    update_paddle(&game.paddle_right, rl.KeyboardKey.UP, rl.KeyboardKey.DOWN)
+            update_paddle(&game.paddle_left, rl.KeyboardKey.W, rl.KeyboardKey.S)
+            update_paddle(&game.paddle_right, rl.KeyboardKey.UP, rl.KeyboardKey.DOWN)
 
-    if game.ball.position.x < 0 {
-        game.score_right += 1
-        reset_ball(&game.ball)
-    }
+            if game.ball.position.x < 0 {
+                game.score_right += 1
+                reset_ball(&game.ball)
+            }
 
-    if game.ball.position.x > f32(rl.GetScreenWidth()) {
-        game.score_left += 1
-        reset_ball(&game.ball)
+            if game.ball.position.x > f32(rl.GetScreenWidth()) {
+                game.score_left += 1
+                reset_ball(&game.ball)
+            }
+
+            if game.score_left >= 5 || game.score_right >= 5 {
+                game.state = .GAME_OVER
+            }
+        case .GAME_OVER:
+            if rl.IsKeyPressed(.R) {
+                game^ = new_game()
+            }         
     }
 }
-
+    
 draw_game :: proc(game: ^Game) {
     rl.BeginDrawing()
 	rl.ClearBackground(rl.BLACK)
