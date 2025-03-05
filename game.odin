@@ -82,17 +82,116 @@ update_game :: proc(game: ^Game) {
 draw_game :: proc(game: ^Game) {
     rl.BeginDrawing()
 	rl.ClearBackground(rl.BLACK)
+
+    # partial switch game.state {
         
-    draw_ball(game.ball) 
-    draw_paddle(game.paddle_left)
-    draw_paddle(game.paddle_right)
+        case .MENU:
+            title := "PONG"
+            instructions := "Press 'P' to play"
+            quit_text := "Press 'ESC' to quit"
 
-    left_score := fmt.tprintf("%d", game.score_left)
-    right_score := fmt.tprintf("%d", game.score_right)
-    rl.DrawText(strings.clone_to_cstring(left_score), rl.GetScreenWidth()/2 - 120, 50, 100, rl.BLUE)
-    rl.DrawText(strings.clone_to_cstring("-"), rl.GetScreenWidth()/2 - 25, 50, 100, rl.WHITE)
-    rl.DrawText(strings.clone_to_cstring(right_score), rl.GetScreenWidth()/2 + 60, 50, 100, rl.YELLOW)
+            // Calculate center positions for each text
+            screen_center_x := rl.GetScreenWidth()/2
+            base_y : i32 = rl.GetScreenHeight()/3
+            spacing : i32 = 80
 
+             // Title (centered, at the top)
+            rl.DrawText(strings.clone_to_cstring(title),
+                screen_center_x - rl.MeasureText(strings.clone_to_cstring(title), 100)/2,
+                base_y,
+                100,
+                rl.WHITE)
+
+            // Play instruction
+            rl.DrawText(strings.clone_to_cstring(instructions),
+                screen_center_x - rl.MeasureText(strings.clone_to_cstring(instructions), 40)/2,
+                base_y + spacing * 2,
+                40,
+                rl.WHITE)
+
+            // Quit instruction
+            rl.DrawText(strings.clone_to_cstring(quit_text),
+                screen_center_x - rl.MeasureText(strings.clone_to_cstring(quit_text), 40)/2,
+                base_y + spacing * 3,
+                40,
+                rl.WHITE)
+
+        case .PLAYING:
+            left_score := fmt.tprintf("%d", game.score_left)
+            right_score := fmt.tprintf("%d", game.score_right)
+
+            rl.DrawText(strings.clone_to_cstring(left_score), 
+                rl.GetScreenWidth()/2 - 120, 
+                50, 
+                100, 
+                rl.BLUE)
+            rl.DrawText(strings.clone_to_cstring("-"), 
+                rl.GetScreenWidth()/2 - 25, 
+                50, 
+                100, 
+                rl.WHITE)
+            rl.DrawText(strings.clone_to_cstring(right_score), 
+                rl.GetScreenWidth()/2 + 60, 
+                50, 
+                100, 
+                rl.YELLOW)
+
+            draw_ball(game.ball) 
+            draw_paddle(game.paddle_left)
+            draw_paddle(game.paddle_right)
+        
+        case .GAME_OVER:
+            winner_color := game.score_left > game.score_right ? rl.BLUE : rl.YELLOW
+            winner_name := game.score_left > game.score_right ? "BLUE" : "YELLOW"
+            winning_score := max(game.score_left, game.score_right)
+            winner_text := fmt.tprintf("%s PLAYER WINS!!!", winner_name)
+            score_text := fmt.tprintf("SCORE: %d", winning_score)
+            game_over_text := "Game Over"
+            play_again_text := "Press 'R' to play again"
+            quit_text := "Press 'ESC' to quit"
+
+            // Calculate center positions for each text
+            screen_center_x := rl.GetScreenWidth()/2
+            base_y : i32 = rl.GetScreenHeight()/3
+            spacing : i32 = 80
+
+            // Game Over (centered, at the top)
+            rl.DrawText(strings.clone_to_cstring(game_over_text),
+                screen_center_x - rl.MeasureText(strings.clone_to_cstring(game_over_text), 100)/2,
+                base_y,
+                100,
+                rl.WHITE)
+
+            // Winner announcement
+            rl.DrawText(strings.clone_to_cstring(winner_text),
+                screen_center_x - rl.MeasureText(strings.clone_to_cstring(winner_text), 60)/2,
+                base_y + spacing * 2,
+                60,
+                winner_color)
+
+            // Score
+            rl.DrawText(strings.clone_to_cstring(score_text),
+                screen_center_x - rl.MeasureText(strings.clone_to_cstring(score_text), 100)/2,
+                base_y + spacing * 3,
+                100,
+                winner_color)
+
+            // Play again instruction
+            rl.DrawText(strings.clone_to_cstring(play_again_text),
+                screen_center_x - rl.MeasureText(strings.clone_to_cstring(play_again_text), 40)/2,
+                base_y + spacing * 5,
+                40,
+                rl.WHITE)
+
+            // Quit instruction
+            rl.DrawText(strings.clone_to_cstring(quit_text),
+                screen_center_x - rl.MeasureText(strings.clone_to_cstring(quit_text), 40)/2,
+                base_y + spacing * 6,
+                40,
+                rl.WHITE)
+    }
+        
+    rl.EndDrawing()
 }
 
 colliding_with_paddle :: proc(ball: ^Ball, paddle: ^Paddle) {

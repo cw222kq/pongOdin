@@ -23,7 +23,8 @@ create_ball :: proc() -> Ball {
 }
 
 draw_ball :: proc(ball: Ball) {
-    rl.DrawCircleV(ball.position, ball.radius, ball.color)
+    ball_color := ball.velocity.x > 0 ? rl.BLUE : rl.YELLOW
+    rl.DrawCircleV(ball.position, ball.radius, ball_color)
 }
 
 colliding_with_wall :: proc(ball: ^Ball) -> bool {
