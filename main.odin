@@ -11,7 +11,8 @@ main :: proc() {
 	
         draw_game(&game)
         update_game(&game)
-        
+
+        rl.EndDrawing()
 	}
 
 	rl.CloseWindow()
