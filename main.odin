@@ -6,6 +6,9 @@ import rl "vendor:raylib"
 main :: proc() {
    
     game := start_game()
+    defer rl.CloseWindow()
+    defer rl.CloseAudioDevice()
+    defer unload_sound(&game.sound_manager)
     
 	for !rl.WindowShouldClose() {
 	

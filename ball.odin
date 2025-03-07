@@ -34,10 +34,11 @@ colliding_with_wall :: proc(ball: ^Ball) -> bool {
     return ball.position.y < min_y || ball.position.y > max_y
 }
 
-update_ball :: proc(ball: ^Ball) {
+update_ball :: proc(ball: ^Ball, sound_manager: ^Sound_Manager) {
    
     if colliding_with_wall(ball) {
         ball.velocity.y = -ball.velocity.y
+        play_sound(sound_manager, "hit")
     }
 
     ball.position.x += ball.velocity.x

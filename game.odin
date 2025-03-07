@@ -3,7 +3,7 @@ package main
 import rl "vendor:raylib"
 import "core:fmt"
 import "core:strings"
-import "core:math/rand"
+import "core:math/rand"         // TODO: Add sounds and error handling
 
 Game_state :: enum {
     MENU,
@@ -14,6 +14,7 @@ Game_state :: enum {
 Game :: struct {
     state: Game_state,
     ball: Ball,
+    sound_manager: Sound_Manager,
     paddle_left: Paddle,
     paddle_right: Paddle,
     score_left: i32,
@@ -24,6 +25,7 @@ new_game :: proc() -> Game {
     return Game{
         state = .MENU,
         ball = create_ball(),
+        sound_manager = create_sound_manager(),
         paddle_left = create_paddle(100, rl.BLUE),
         paddle_right = create_paddle(1480, rl.YELLOW),
         score_left = 0,
@@ -40,8 +42,16 @@ start_game :: proc() -> Game {
 
     rl.InitWindow(screen_width, screen_height, "Pong")
     rl.SetTargetFPS(60)
+    rl.InitAudioDevice()
 
-    return new_game()
+    game := new_game()
+
+    load_sound(&game.sound_manager, "start", "assets/sounds/start.mp3")
+    load_sound(&game.sound_manager, "hit", "assets/sounds/hit.wav")
+    load_sound(&game.sound_manager, "goal", "assets/sounds/goal.wav")
+    load_sound(&game.sound_manager, "game_over", "assets/sounds/game_over.mp3")
+
+    return game
 }
 
 update_game :: proc(game: ^Game) {
@@ -49,33 +59,44 @@ update_game :: proc(game: ^Game) {
         case .MENU:
             if rl.IsKeyPressed(.P) {
                 game.state = .PLAYING
+                play_sound(&game.sound_manager, "start")
             }
-        case .PLAYING:
-            update_ball(&game.ball)
 
-            colliding_with_paddle(&game.ball, &game.paddle_left)
-            colliding_with_paddle(&game.ball, &game.paddle_right)
+        case .PLAYING:
+            update_ball(&game.ball, &game.sound_manager)
+
+            colliding_with_paddle(&game.ball, &game.paddle_left, &game.sound_manager)
+            colliding_with_paddle(&game.ball, &game.paddle_right, &game.sound_manager)
 
             update_paddle(&game.paddle_left, rl.KeyboardKey.W, rl.KeyboardKey.S)
             update_paddle(&game.paddle_right, rl.KeyboardKey.UP, rl.KeyboardKey.DOWN)
 
             if game.ball.position.x < 0 {
+                play_sound(&game.sound_manager, "goal")
                 game.score_right += 1
                 reset_ball(&game.ball)
             }
 
             if game.ball.position.x > f32(rl.GetScreenWidth()) {
+                play_sound(&game.sound_manager, "goal")
                 game.score_left += 1
                 reset_ball(&game.ball)
             }
 
             if game.score_left >= 5 || game.score_right >= 5 {
+                play_sound(&game.sound_manager, "game_over")
                 game.state = .GAME_OVER
             }
         case .GAME_OVER:
             if rl.IsKeyPressed(.R) {
+                play_sound(&game.sound_manager, "start")
                 game^ = new_game()
+                game.state = .PLAYING
             }         
+    }
+
+    if rl.IsKeyPressed(.ESCAPE) {
+        unload_sound(&game.sound_manager)
     }
 }
     
@@ -194,7 +215,7 @@ draw_game :: proc(game: ^Game) {
     rl.EndDrawing()
 }
 
-colliding_with_paddle :: proc(ball: ^Ball, paddle: ^Paddle) {
+colliding_with_paddle :: proc(ball: ^Ball, paddle: ^Paddle, sound_manager: ^Sound_Manager) {
     paddle_area := rl.Rectangle{
         x = paddle.position.x,
         y = paddle.position.y,
@@ -203,6 +224,7 @@ colliding_with_paddle :: proc(ball: ^Ball, paddle: ^Paddle) {
     }
 
     if rl.CheckCollisionCircleRec(ball.position, ball.radius, paddle_area) {
+        play_sound(sound_manager, "hit")
         ball.velocity.x = -ball.velocity.x * 1.4
         ball.velocity.y *= 1.4
     }
