@@ -6,14 +6,43 @@ import "core:strings"
 import "core:math/rand"
 import "core:os"
 
-Game_state :: enum {
+Game_State :: enum {
     MENU,
     PLAYING,
     GAME_OVER,
 }
 
+Game_State_Transition :: struct {
+    from: Game_State,
+    to: Game_State,
+}
+
+VALID_TRANSITIONS :: []Game_State_Transition { // TODO: LOOK THROUGH THIS AND THE TWO PROC BELOW
+    {.MENU, .PLAYING},
+    {.PLAYING, .GAME_OVER},
+    {.GAME_OVER, .PLAYING},
+}
+
+is_valid_state_transition :: proc(from: Game_State, to: Game_State) -> bool {
+    for transition in VALID_TRANSITIONS {
+        if transition.from == from && transition.to == to {
+            return true
+        }
+    }
+    return false
+}
+
+change_game_state :: proc(game: ^Game, new_state: Game_State) -> (ok: bool) {
+    if !is_valid_state_transition(game.state, new_state) {
+        fmt.println("Error: Invalid game state transition from", game.state, "to", new_state)
+        return false
+    }
+    game.state = new_state
+    return true
+}
+
 Game :: struct {
-    state: Game_state,
+    state: Game_State,
     ball: Ball,
     sound_manager: Sound_Manager,
     paddle_left: Paddle,
@@ -22,29 +51,37 @@ Game :: struct {
     score_right: i32,
 }
 
-new_game :: proc() -> Game {
+// Constants
+SCREEN_WIDTH :: 1600
+SCREEN_HEIGHT :: 900
+PADDLE_WIDTH :: 20
+PADDLE_HEIGHT :: 200
+WINNING_SCORE :: 5
+BALL_INITIAL_SPEED :: 3.0
+BALL_SPEED_INCREASE :: 1.4
+BALL_RADIUS :: 10.0
+PADDLE_SPEED :: 4.0
+
+new_game :: proc() -> (game: Game, ok: bool) {
     ball, ball_ok := create_ball()
     if !ball_ok {
         fmt.println("Error:Failed to create ball")
-        rl.CloseWindow()
-        os.exit(1)
+        return game, false
     }
 
-    paddle_left, paddle_left_ok := create_paddle(100, rl.BLUE)
+    paddle_left, paddle_left_ok := create_paddle(f32(PADDLE_HEIGHT/2), rl.BLUE)
     if !paddle_left_ok {
         fmt.println("Error:Failed to create left paddle")
-        rl.CloseWindow()
-        os.exit(1)
+        return game, false
     }
-
-    paddle_right, paddle_right_ok := create_paddle(1480, rl.YELLOW)
+// 1480
+    paddle_right, paddle_right_ok := create_paddle(f32(SCREEN_WIDTH - PADDLE_HEIGHT/2 - PADDLE_WIDTH), rl.YELLOW)
     if !paddle_right_ok {
         fmt.println("Error:Failed to create right paddle")
-        rl.CloseWindow()
-        os.exit(1)
+        return game, false
     }
     
-    return Game{
+    game = Game{
         state = .MENU,
         ball = ball,
         sound_manager = create_sound_manager(),
@@ -53,20 +90,23 @@ new_game :: proc() -> Game {
         score_left = 0,
         score_right = 0,
     }
+
+    return game, true
 }
 
 start_game :: proc() -> (game: Game, ok: bool) {
-    screen_width: i32 = 1600
-    screen_height: i32 = 900
-
     // Seed the random number generator
     rand.reset(u64(rl.GetTime() *1000))
 
-    rl.InitWindow(screen_width, screen_height, "Pong")
+    rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Pong")
     rl.SetTargetFPS(60)
     rl.InitAudioDevice()
 
-    game = new_game()
+    game, ok = new_game()
+    if !ok {
+        fmt.println("Error: Failed to create new game")
+        return game, false
+    }
 
     if !load_sound(&game.sound_manager, "start", "assets/sounds/start.mp3") {
         fmt.println("Failed to load start sound")
@@ -127,7 +167,6 @@ restart_game :: proc(game: ^Game) -> (ok:bool) {
         return false
     }
 
-    game.state = .PLAYING
     return true  
 }
 
@@ -135,10 +174,14 @@ update_game :: proc(game: ^Game) {
     # partial switch game.state {
         case .MENU:
             if rl.IsKeyPressed(.P) {
-                game.state = .PLAYING
-                if !play_sound(&game.sound_manager, "start") {
-                    fmt.println("Failed to play start sound")
-                }
+                if change_game_state(game, .PLAYING) {
+                    if !play_sound(&game.sound_manager, "start") {
+                        fmt.println("Failed to play start sound")
+                    }
+                } else {
+                    fmt.println("Error: Failed to start the game")
+                    return
+                }  
             }
 
         case .PLAYING:
@@ -152,7 +195,7 @@ update_game :: proc(game: ^Game) {
 
             if game.ball.position.x < 0 {
                 if !play_sound(&game.sound_manager, "goal") {
-                    fmt.println("Failed to play goal sound")
+                    fmt.println("Error:Failed to play goal sound")
                 }
                 game.score_right += 1
                 reset_ball(&game.ball)
@@ -160,22 +203,31 @@ update_game :: proc(game: ^Game) {
 
             if game.ball.position.x > f32(rl.GetScreenWidth()) {
                 if !play_sound(&game.sound_manager, "goal") {
-                    fmt.println("Failed to play goal sound")
+                    fmt.println("Error: Failed to play goal sound")
                 }
                 game.score_left += 1
                 reset_ball(&game.ball)
             }
 
-            if game.score_left >= 5 || game.score_right >= 5 {
+            if game.score_left >= WINNING_SCORE || game.score_right >= WINNING_SCORE {
                 if !play_sound(&game.sound_manager, "game_over") {
-                    fmt.println("Failed to play game over sound")
+                    fmt.println("Error: Failed to play game over sound")
                 }
-                game.state = .GAME_OVER
+                if !change_game_state(game, .GAME_OVER) {
+                    fmt.println("Error: Failed to transition to game over state")
+                    return
+                }
             }
         case .GAME_OVER:
             if rl.IsKeyPressed(.R) { 
-                if !restart_game(game) {
-                    fmt.println("Error:Failed to restart game")
+                if restart_game(game) {
+                    if !change_game_state(game, .PLAYING) {
+                        fmt.println("Error: Failed to transition to playing state")
+                        return
+                    }
+                } else {
+                    fmt.println("Error: Failed to restart game")
+                    return
                 }
             }         
     }
@@ -310,7 +362,17 @@ colliding_with_paddle :: proc(ball: ^Ball, paddle: ^Paddle, sound_manager: ^Soun
 
     if rl.CheckCollisionCircleRec(ball.position, ball.radius, paddle_area) {
         play_sound(sound_manager, "hit")
-        ball.velocity.x = -ball.velocity.x * 1.4
-        ball.velocity.y *= 1.4
+        ball.velocity.x = -ball.velocity.x * BALL_SPEED_INCREASE
+        ball.velocity.y *= BALL_SPEED_INCREASE
     }
+}
+
+cleanup_game :: proc(game: ^Game) {
+    if game == nil {
+        fmt.println("Error: Attempting to cleanup nil game")
+        return
+    }
+
+    unload_sound(&game.sound_manager)
+    fmt.println("Game cleanup complete")
 }

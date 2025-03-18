@@ -18,11 +18,10 @@ create_ball :: proc() -> (ball: Ball, ok: bool) {
         fmt.println("Error: Invalid screen dimensions for ball creation")
         return ball, false
     }
-    initial_speed : f32= 3.0
     ball = Ball{
         position = rl.Vector2{f32(rl.GetScreenWidth()/2), f32(rl.GetScreenHeight()/2)}, 
-        velocity = get_random_velocity(initial_speed),
-        radius = 10.0,
+        velocity = get_random_velocity(BALL_INITIAL_SPEED),
+        radius = BALL_RADIUS,
         color = rl.WHITE,
     }
     return ball, true
@@ -58,6 +57,9 @@ update_ball :: proc(ball: ^Ball, sound_manager: ^Sound_Manager) -> (ok: bool) {
 
     ball.position.x += ball.velocity.x
     ball.position.y += ball.velocity.y
+
+    ball.speed = math.sqrt(ball.velocity.x * ball.velocity.x + ball.velocity.y * ball.velocity.y)
+    
     return true
 }
 
@@ -68,8 +70,7 @@ reset_ball :: proc(ball: ^Ball) -> (ok: bool) {
     }
     // Set position to center of screen
     ball.position = rl.Vector2{f32(rl.GetScreenWidth()/2), f32(rl.GetScreenHeight()/2)}
-    initial_speed: f32 = 3.0
-    ball.velocity = get_random_velocity(initial_speed) 
+    ball.velocity = get_random_velocity(BALL_INITIAL_SPEED) 
     return true
 }
 

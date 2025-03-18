@@ -14,8 +14,8 @@ create_paddle :: proc(posX: f32, color: rl.Color) -> (paddle: Paddle, ok: bool) 
         return paddle, false
     }
     return Paddle{
-        position = rl.Vector2{f32(posX), f32(rl.GetScreenHeight())/2 - 200/2},
-        size = rl.Vector2{20, 200},
+        position = rl.Vector2{f32(posX), f32(rl.GetScreenHeight())/2 - PADDLE_HEIGHT/2},
+        size = rl.Vector2{PADDLE_WIDTH, PADDLE_HEIGHT},
         color = color,
     }, true
 }
@@ -30,11 +30,11 @@ update_paddle :: proc(paddle: ^Paddle, up, down: rl.KeyboardKey) -> (ok: bool) {
         return false
     }
     if rl.IsKeyDown(up) && paddle.position.y > 0 {
-        paddle.position.y -= 4
+        paddle.position.y -= PADDLE_SPEED
     }
 
     if rl.IsKeyDown(down) && paddle.position.y < f32(rl.GetScreenHeight()) - f32(paddle.size.y) {
-        paddle.position.y += 4
+        paddle.position.y += PADDLE_SPEED
     }
     return true
 }
