@@ -3,7 +3,8 @@ package main
 import rl "vendor:raylib"
 import "core:fmt"
 import "core:strings"
-import "core:math/rand"         // TODO: Add sounds and error handling
+import "core:math/rand"
+import "core:os"
 
 Game_state :: enum {
     MENU,
@@ -22,18 +23,39 @@ Game :: struct {
 }
 
 new_game :: proc() -> Game {
+    ball, ball_ok := create_ball()
+    if !ball_ok {
+        fmt.println("Error:Failed to create ball")
+        rl.CloseWindow()
+        os.exit(1)
+    }
+
+    paddle_left, paddle_left_ok := create_paddle(100, rl.BLUE)
+    if !paddle_left_ok {
+        fmt.println("Error:Failed to create left paddle")
+        rl.CloseWindow()
+        os.exit(1)
+    }
+
+    paddle_right, paddle_right_ok := create_paddle(1480, rl.YELLOW)
+    if !paddle_right_ok {
+        fmt.println("Error:Failed to create right paddle")
+        rl.CloseWindow()
+        os.exit(1)
+    }
+    
     return Game{
         state = .MENU,
-        ball = create_ball(),
+        ball = ball,
         sound_manager = create_sound_manager(),
-        paddle_left = create_paddle(100, rl.BLUE),
-        paddle_right = create_paddle(1480, rl.YELLOW),
+        paddle_left = paddle_left,
+        paddle_right = paddle_right,
         score_left = 0,
         score_right = 0,
     }
 }
 
-start_game :: proc() -> Game {
+start_game :: proc() -> (game: Game, ok: bool) {
     screen_width: i32 = 1600
     screen_height: i32 = 900
 
@@ -44,14 +66,69 @@ start_game :: proc() -> Game {
     rl.SetTargetFPS(60)
     rl.InitAudioDevice()
 
-    game := new_game()
+    game = new_game()
 
-    load_sound(&game.sound_manager, "start", "assets/sounds/start.mp3")
-    load_sound(&game.sound_manager, "hit", "assets/sounds/hit.wav")
-    load_sound(&game.sound_manager, "goal", "assets/sounds/goal.wav")
-    load_sound(&game.sound_manager, "game_over", "assets/sounds/game_over.mp3")
+    if !load_sound(&game.sound_manager, "start", "assets/sounds/start.mp3") {
+        fmt.println("Failed to load start sound")
+        return game, false
+    }
 
-    return game
+    if !load_sound(&game.sound_manager, "hit", "assets/sounds/hit.wav") {
+        fmt.println("Failed to load hit sound")
+        return game, false
+    }
+
+    if !load_sound(&game.sound_manager, "goal", "assets/sounds/goal.wav") {
+        fmt.println("Failed to load goal sound")
+        return game, false
+    }
+
+    if !load_sound(&game.sound_manager, "game_over", "assets/sounds/game_over.mp3") {
+        fmt.println("Failed to load game over sound")
+        return game, false
+    }
+
+    return game, true
+}
+
+restart_game :: proc(game: ^Game) -> (ok:bool) {
+    // Create new new ball
+    new_ball, ball_ok := create_ball()
+    if !ball_ok {
+        fmt.println("Error: Failed to create new ball")
+        return false
+    }
+
+    // Create new paddles
+    new_paddle_left, paddle_left_ok := create_paddle(100, rl.BLUE)
+    if !paddle_left_ok {
+        fmt.println("Error: Failed to create new left paddle")
+        return false
+    }
+
+    new_paddle_right, paddle_right_ok := create_paddle(1480, rl.YELLOW)
+    if !paddle_right_ok {
+        fmt.println("Error: Failed to create new right paddle")
+        return false
+    }
+
+    // Reset scores
+    game.score_left = 0
+    game.score_right = 0
+
+    // Update game state
+    game.ball = new_ball
+    game.paddle_left = new_paddle_left
+    game.paddle_right = new_paddle_right
+
+    // Play start sound
+    if !play_sound(&game.sound_manager, "start") {
+        fmt.println("Failed to play start sound")
+        return false
+    }
+
+    game.state = .PLAYING
+    return true  
 }
 
 update_game :: proc(game: ^Game) {
@@ -59,7 +136,9 @@ update_game :: proc(game: ^Game) {
         case .MENU:
             if rl.IsKeyPressed(.P) {
                 game.state = .PLAYING
-                play_sound(&game.sound_manager, "start")
+                if !play_sound(&game.sound_manager, "start") {
+                    fmt.println("Failed to play start sound")
+                }
             }
 
         case .PLAYING:
@@ -72,26 +151,32 @@ update_game :: proc(game: ^Game) {
             update_paddle(&game.paddle_right, rl.KeyboardKey.UP, rl.KeyboardKey.DOWN)
 
             if game.ball.position.x < 0 {
-                play_sound(&game.sound_manager, "goal")
+                if !play_sound(&game.sound_manager, "goal") {
+                    fmt.println("Failed to play goal sound")
+                }
                 game.score_right += 1
                 reset_ball(&game.ball)
             }
 
             if game.ball.position.x > f32(rl.GetScreenWidth()) {
-                play_sound(&game.sound_manager, "goal")
+                if !play_sound(&game.sound_manager, "goal") {
+                    fmt.println("Failed to play goal sound")
+                }
                 game.score_left += 1
                 reset_ball(&game.ball)
             }
 
             if game.score_left >= 5 || game.score_right >= 5 {
-                play_sound(&game.sound_manager, "game_over")
+                if !play_sound(&game.sound_manager, "game_over") {
+                    fmt.println("Failed to play game over sound")
+                }
                 game.state = .GAME_OVER
             }
         case .GAME_OVER:
-            if rl.IsKeyPressed(.R) {
-                play_sound(&game.sound_manager, "start")
-                game^ = new_game()
-                game.state = .PLAYING
+            if rl.IsKeyPressed(.R) { 
+                if !restart_game(game) {
+                    fmt.println("Error:Failed to restart game")
+                }
             }         
     }
 
@@ -157,7 +242,7 @@ draw_game :: proc(game: ^Game) {
                 100, 
                 rl.YELLOW)
 
-            draw_ball(game.ball) 
+            draw_ball(game.ball)
             draw_paddle(game.paddle_left)
             draw_paddle(game.paddle_right)
         

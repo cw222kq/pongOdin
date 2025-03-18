@@ -5,10 +5,11 @@ import rl "vendor:raylib"
 
 main :: proc() {
    
-    game := start_game()
-    defer rl.CloseWindow()
-    defer rl.CloseAudioDevice()
-    defer unload_sound(&game.sound_manager)
+    game, ok := start_game()
+    if !ok {
+        fmt.println("Failed to start game: Could not load sounds")
+        return
+    }
     
 	for !rl.WindowShouldClose() {
 	
@@ -16,5 +17,10 @@ main :: proc() {
         update_game(&game)
 	}
 
-	rl.CloseWindow()
+    fmt.println("Closing game.....")
+    defer rl.CloseWindow()
+    defer rl.CloseAudioDevice()
+    defer unload_sound(&game.sound_manager)
+    
+	//rl.CloseWindow()
 }

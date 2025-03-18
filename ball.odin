@@ -3,6 +3,7 @@ package main
 import rl "vendor:raylib"
 import "core:math/rand"
 import "core:math"
+import fmt "core:fmt"
 
 Ball :: struct {
     position: rl.Vector2,
@@ -12,14 +13,19 @@ Ball :: struct {
     color: rl.Color,
 }
 
-create_ball :: proc() -> Ball {
+create_ball :: proc() -> (ball: Ball, ok: bool) {
+    if rl.GetScreenWidth() <= 0 || rl.GetScreenHeight() <= 0 { 
+        fmt.println("Error: Invalid screen dimensions for ball creation")
+        return ball, false
+    }
     initial_speed : f32= 3.0
-    return Ball{
+    ball = Ball{
         position = rl.Vector2{f32(rl.GetScreenWidth()/2), f32(rl.GetScreenHeight()/2)}, 
         velocity = get_random_velocity(initial_speed),
         radius = 10.0,
         color = rl.WHITE,
     }
+    return ball, true
 }
 
 draw_ball :: proc(ball: Ball) {
@@ -28,28 +34,43 @@ draw_ball :: proc(ball: Ball) {
 }
 
 colliding_with_wall :: proc(ball: ^Ball) -> bool {
+    if ball == nil {
+        fmt.println("Error: Attempting to check collision with nil ball")
+        return false
+    }
     min_y := ball.radius
     max_y := f32(rl.GetScreenHeight()) - ball.radius
 
     return ball.position.y < min_y || ball.position.y > max_y
 }
 
-update_ball :: proc(ball: ^Ball, sound_manager: ^Sound_Manager) {
-   
+update_ball :: proc(ball: ^Ball, sound_manager: ^Sound_Manager) -> (ok: bool) {
+   if ball == nil {
+    fmt.println("Error: Attempting to update nil ball")
+    return false
+   }
     if colliding_with_wall(ball) {
         ball.velocity.y = -ball.velocity.y
-        play_sound(sound_manager, "hit")
+        if !play_sound(sound_manager, "hit") {
+            fmt.println("Failed to play hit sound")
+        }
     }
 
     ball.position.x += ball.velocity.x
     ball.position.y += ball.velocity.y
+    return true
 }
 
-reset_ball :: proc(ball: ^Ball) {
+reset_ball :: proc(ball: ^Ball) -> (ok: bool) {
+    if ball == nil {
+        fmt.println("Error: Attempting to reset nil ball")
+        return false
+    }
     // Set position to center of screen
     ball.position = rl.Vector2{f32(rl.GetScreenWidth()/2), f32(rl.GetScreenHeight()/2)}
     initial_speed: f32 = 3.0
     ball.velocity = get_random_velocity(initial_speed) 
+    return true
 }
 
 get_random_velocity :: proc(speed: f32) -> rl.Vector2 {
