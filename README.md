@@ -2,25 +2,39 @@
 
 A classic Pong game implementation written in the Odin programming language using the Raylib library.
 
-## Description
+## Key Features
 
-This project is a simple clone of the classic arcade game Pong. It features two paddles controlled by the player (or potentially AI in the future), a ball that bounces off walls and paddles, a scoring system, and basic sound effects. The game includes different states like a main menu, active gameplay, and a game over screen.
+*   Classic 2-player Pong gameplay.
+*   Scoring system (first to 5 points wins).
+*   Ball color indicates direction (matches the target player's paddle color).
+*   Ball speed increases on paddle hits.
+*   Randomized ball direction on start/reset.
+*   Menu, Playing, and Game Over states.
+*   Sound effects for key events.
 
-## Features
+## Prerequisites
 
-*   **Classic Pong Gameplay**: Two paddles, one ball.
-*   **Two Player Controls**: Left paddle controlled by W/S, right paddle by Up/Down arrows.
-*   **Scoring System**: Score increments when the opponent misses the ball. The first player to reach 5 points wins.
-*   **Ball Physics**: Ball bounces off paddles and top/bottom walls. Speed increases upon hitting a paddle.
-*   **Randomized Ball Start**: The ball starts in a random direction at the beginning of each round.
-*   **Sound Effects**: Sounds for paddle hits, scoring goals, game start, and game over.
-*   **Game States**: Includes a Menu, Playing, and Game Over state with appropriate UI and logic.
-*   **State Management**: Implements a basic state transition system to ensure valid game flow.
-*   **Constants for Configuration**: Game parameters like screen size, paddle speed, winning score, etc., are defined as constants for easy modification.
+*   **Odin Compiler**: [Installation Guide](https://odin-lang.org/docs/install/)
+*   **Raylib**: Included via `vendor:raylib`. Ensure Raylib system libraries are installed if required by your OS.
 
-## Building the Project
+## Getting Started
 
-### Prerequisites
+1.  **Clone the Repository:**
+    ```bash
+    git clone https://github.com/cw222kq/pongOdin.git
+    cd pongOdin 
+    ```
 
-*   Odin Compiler ([Installation Guide](https://odin-lang.org/docs/install/))
-*   Raylib library (This project uses the Raylib bindings included via `vendor:raylib`)
+2.  **Run the Game:**
+    Navigate to the project directory (if you aren't already there) and run:
+    ```bash
+    odin run .
+    ```
+
+## Controls
+
+*   **Start Game**: `P` (from menu)
+*   **Left Paddle**: `W` (up) / `S` (down)
+*   **Right Paddle**: `Up Arrow` (up) / `Down Arrow` (down)
+*   **Restart Game**: `R` (on Game Over screen)
+*   **Quit**: `ESC`
